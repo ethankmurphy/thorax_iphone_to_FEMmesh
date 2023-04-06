@@ -2,7 +2,7 @@
 Construct a subject specific FEM mesh with encoded electrodes from a segmented/processed 3D iPhone scan of a subject's thorax. The main function, construct_FEMmeshes.m, 
   *  Loads a processed 3D scan, processed via https://github.com/ethankmurphy/EIT_3D_thorax_scans 
   *  Then it construct an outer surface triangulation with encoded electrodes.
-      * The meshing here is done using distmesh, https://github.com/ionhandshaker/distmesh
+      * The meshing here is done using distmesh, http://persson.berkeley.edu/distmesh/#:~:text=DistMesh%20is%20a%20simple%20MATLAB,Department%20of%20Mathematics%20at%20MIT.
       * One needs just to download distmesh and add the path (lines 28-31 of construct_FEMmeshes.m)
   * After the surface mesh is made, then the information is sent to gmsh, where a 3D tetrahedral mesh is generated.
       * gmsh is a free software, https://gmsh.info/
