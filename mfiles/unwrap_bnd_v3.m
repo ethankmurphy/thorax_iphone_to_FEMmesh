@@ -80,6 +80,10 @@ maxz = max(bmsh.node(:,3));
 %--------------------------------------------------------------------------
 % Perform a smooth fit to the rotated surface
 [pfits, rbf4ps]  = four_cylfit(bmsh.node,bndfit.Nf,bndfit.Nzc,bndfit.sigz*10);
+% figure;hold on
+% trisurf(bmsh.tri,bmsh.node(:,1),bmsh.node(:,2),bmsh.node(:,3),'facecolor','cyan','linestyle','none','facealpha',0.3)
+% plot3(pfits(:,1),pfits(:,2),pfits(:,3),'.k','markersize',12)
+
 %--------------------------------------------------------------------------
 % Convert the points to cylindrical coordinates
 ts       = linspace(0,2*pi,64)';
@@ -128,11 +132,12 @@ send  = fourb_trans([], tend,transobj,2);
 %-----------------------------
 % Parameters here are reasonable for adult thorax domains assuming units of
 % mm. If there is a big change, then these values need to be changed. 
+% distance/size = number, or number*size = distance
 zspc  = 1;
-ntop  = round(abs(   maxz - (maxzel+zspc) )/8);
-nbot  = round(abs(   minz - (minzel-zspc) )/8);
+ntop  = round(abs(   maxz - (maxzel+zspc) )/4);
+nbot  = round(abs(   minz - (minzel-zspc) )/4);
 nmid  = round(abs(maxzel - minzel)/2);
-nsstp = round(abs(send)/10);
+nsstp = round(abs(send)/10); % was 10
 zs    = unique([ ...
     linspace(       minz,minzel-zspc,nbot)'; ...    % coarse bottom
     linspace(minzel-zspc,maxzel+zspc,nmid)'; ...    % fine middle
@@ -144,6 +149,7 @@ bbnd  = [ ...
     sstt*ones(nz,1) zs
     send*ones(nz,1) zs];
 bbnd = unique(bbnd,'rows');
+disp(['distmesh input: zspc=',num2str(zspc),', N_horz=',num2str(nsstp),', N_bndps=',num2str(size(bbnd,1))])
 %--------------------------------------------------------------------------
 % Make sure the boundaries are arranged in an CCW fashion
 ptmp     = bbnd - repmat(mean(bbnd,1),size(bbnd,1),1);
@@ -190,11 +196,21 @@ end
 il  = find( abs(p(:,1) - min(p(:,1)))<0.001 );
 ir  = find( abs(p(:,1) - max(p(:,1)))<0.001 );
 ir  = ir(end:-1:1);
-if norm( p(il,2) - p(ir,2) ) > 0.001
-    norm( p(il,2) - p(ir,2) )
-    error('points don''t match up')
+% save testdata
+if abs(length(il) - length(ir)) > 0
+    % Trying again with a larger h-increase factor
+    [p,t,hvals] = construct_distmesh_polygon_innerfixed(bbnd,elpts,dbg_flg,1.4);
+    il  = find( abs(p(:,1) - min(p(:,1)))<0.001 );
+    ir  = find( abs(p(:,1) - max(p(:,1)))<0.001 );
+    ir  = ir(end:-1:1);
 end
-
+if norm( p(il,2) - p(ir,2) ) > 0.001
+    ir  = ir(end:-1:1); % Try switching it again!!
+    if norm( p(il,2) - p(ir,2) ) > 0.001
+        norm( p(il,2) - p(ir,2) )
+        error('points don''t match up')
+    end
+end
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -249,7 +265,7 @@ for n = 1:length(elpts2D)
     % Adjust the electrode points until the area is equal to our
     % requisted electrode area
     bestfac = fminbnd(@(fac) elec_pts_fit_area(fac,n,delec,p,elecs,elpts2D,elns,bnd_f,tcut),0.60,1.40);
-
+    % bestfac
     %----------------------------------------------------------------------
     % Get the boundary points
     e3Dis = zeros(length(el3D_bndpts{n}),1);
